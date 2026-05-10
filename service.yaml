@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pos-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: pos
+  ports:
+  - port: 80
+    targetPort: 8000
