@@ -10,10 +10,9 @@
 </head>
 <body class="bg-slate-50 text-slate-900">
 
-    <!-- Navegación -->
     <nav class="bg-white border-b sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="mostrarSeccion('inicio')">
                 <div class="bg-blue-600 p-1.5 rounded-lg text-white font-bold">CA</div>
                 <span class="text-xl font-bold tracking-tight text-blue-800">CRUZ AZUL</span>
             </div>
@@ -25,14 +24,13 @@
         </div>
     </nav>
 
-    <!-- Sección Pública (Inicio) -->
     <section id="sec-inicio" class="block">
         <header class="bg-gradient-to-r from-blue-700 to-indigo-800 py-20 text-center text-white px-4">
             <h1 class="text-4xl md:text-5xl font-extrabold mb-4">Tu bienestar es nuestra prioridad</h1>
             <p class="text-lg opacity-90 max-w-2xl mx-auto">Accede a nuestro catálogo completo de medicamentos y productos de cuidado personal.</p>
+            <button onclick="abrirLogin()" class="mt-8 inline-block bg-white text-blue-700 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-blue-50 transition">Gestionar Inventario</button>
         </header>
         
-        <!-- Tarjetas Informativas -->
         <div class="max-w-7xl mx-auto p-8 grid md:grid-cols-3 gap-6">
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 text-center">
                 <div class="text-3xl mb-3">💊</div>
@@ -51,26 +49,28 @@
             </div>
         </div>
 
-        <!-- Catálogo Público -->
         <div class="max-w-7xl mx-auto p-8 mt-4">
-            <h2 class="text-2xl font-bold mb-6 text-center text-blue-800">Nuestro Catálogo</h2>
+            <h2 class="text-2xl font-bold mb-6 text-center text-blue-800">Nuestro Catálogo Público</h2>
             <div id="catalogo-publico" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <!-- Los productos se cargarán aquí automáticamente -->
-            </div>
+                </div>
         </div>
     </section>
 
-    <!-- Sección de Administrador (Oculta por defecto) -->
     <section id="sec-admin" class="hidden max-w-7xl mx-auto p-8">
-        <div class="flex justify-between items-center mb-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
-                <h2 class="text-2xl font-bold">Gestión de Inventario</h2>
-                <p class="text-slate-500">Panel administrativo para Cruz Azul</p>
+                <button onclick="mostrarSeccion('inicio')" class="text-blue-600 text-sm font-semibold flex items-center gap-1 mb-2 hover:underline">
+                    ← Volver al Inicio Público
+                </button>
+                <h2 class="text-3xl font-bold text-slate-800">Gestión de Inventario</h2>
+                <p class="text-slate-500">Panel administrativo interno</p>
             </div>
-            <button onclick="abrirModalAgregar()" class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 shadow-lg shadow-green-200">+ Agregar Producto</button>
+            <button onclick="abrirModalAgregar()" class="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-200 transition">
+                + Agregar Producto
+            </button>
         </div>
         
-        <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <table class="w-full text-left">
                 <thead class="bg-slate-50 border-b">
                     <tr>
@@ -80,40 +80,33 @@
                         <th class="p-4 font-semibold text-slate-600 text-right">Acción</th>
                     </tr>
                 </thead>
-                <tbody id="lista-productos">
-                    <!-- Los productos para el admin se cargarán aquí -->
-                </tbody>
+                <tbody id="lista-productos"></tbody>
             </table>
         </div>
     </section>
 
-    <!-- Modal Login -->
     <div id="modal-login" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-        <div class="bg-white w-full max-w-md rounded-2xl p-8 shadow-2xl">
-            <h2 class="text-2xl font-bold mb-2">Acceso Administrativo</h2>
-            <p class="text-slate-500 mb-6 text-sm">Ingresa tus credenciales de empleado.</p>
+        <div class="bg-white w-full max-w-md rounded-2xl p-8 shadow-2xl border border-slate-100">
+            <h2 class="text-2xl font-bold mb-2 text-slate-800">Acceso Administrativo</h2>
+            <p class="text-slate-500 mb-6 text-sm">Identifícate para gestionar los productos.</p>
             <form id="form-login" class="space-y-4">
-                <input type="text" id="user" placeholder="Usuario" class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                <input type="password" id="pass" placeholder="Contraseña" class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" id="user" placeholder="Usuario" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="password" id="pass" placeholder="Contraseña" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                 <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition">Entrar al Sistema</button>
                 <button type="button" onclick="cerrarLogin()" class="w-full text-slate-400 text-sm mt-2 hover:text-slate-600">Cerrar</button>
             </form>
         </div>
     </div>
 
-    <!-- Modal Agregar Producto -->
     <div id="modal-agregar" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
         <div class="bg-white w-full max-w-md rounded-2xl p-8 shadow-2xl">
-            <h2 class="text-2xl font-bold mb-2">Agregar Nuevo Medicamento</h2>
-            <p class="text-slate-500 mb-6 text-sm">Ingresa los detalles para registrarlo en la base de datos.</p>
-            
+            <h2 class="text-2xl font-bold mb-2">Nuevo Medicamento</h2>
             <form id="form-agregar" class="space-y-4">
-                <input type="text" id="nuevo-nombre" placeholder="Nombre del producto (Ej. Paracetamol 500mg)" required class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                <input type="text" id="nuevo-nombre" placeholder="Nombre" required class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
                 <input type="number" id="nuevo-precio" placeholder="Precio ($)" required class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
-                <input type="number" id="nuevo-stock" placeholder="Stock inicial" required class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
-                
-                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition">Guardar en Base de Datos</button>
-                <button type="button" onclick="cerrarModalAgregar()" class="w-full text-slate-400 text-sm mt-2 hover:text-slate-600">Cancelar</button>
+                <input type="number" id="nuevo-stock" placeholder="Stock" required class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition">Guardar</button>
+                <button type="button" onclick="cerrarModalAgregar()" class="w-full text-slate-400 text-sm mt-2">Cancelar</button>
             </form>
         </div>
     </div>

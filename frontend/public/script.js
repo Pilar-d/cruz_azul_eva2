@@ -1,9 +1,17 @@
+// Variable de estado para saber si el admin está logueado
+let esAdminLogueado = false;
+
 // ==========================================
-// 1. LÓGICA DE NAVEGACIÓN Y LOGIN
+// 1. NAVEGACIÓN Y ACCESO
 // ==========================================
 
 function abrirLogin() {
-    document.getElementById('modal-login').classList.remove('hidden');
+    // Si ya inició sesión, lo llevamos directo al panel en lugar de pedir clave
+    if (esAdminLogueado) {
+        mostrarSeccion('admin');
+    } else {
+        document.getElementById('modal-login').classList.remove('hidden');
+    }
 }
 
 function cerrarLogin() {
@@ -11,40 +19,46 @@ function cerrarLogin() {
 }
 
 function mostrarSeccion(seccion) {
-    if(seccion === 'admin') {
-        document.getElementById('sec-inicio').classList.add('hidden');
-        document.getElementById('sec-admin').classList.remove('hidden');
+    const inicio = document.getElementById('sec-inicio');
+    const admin = document.getElementById('sec-admin');
+
+    if(seccion === 'admin' && esAdminLogueado) {
+        inicio.classList.add('hidden');
+        admin.classList.remove('hidden');
+        cargarProductos();
     } else {
-        document.getElementById('sec-inicio').classList.remove('hidden');
-        document.getElementById('sec-admin').classList.add('hidden');
+        // Por defecto mostramos el inicio público
+        inicio.classList.remove('hidden');
+        admin.classList.add('hidden');
+        // Si no es admin logueado, nos aseguramos que cargue el catálogo público
+        cargarProductos(); 
     }
 }
 
-function logout() {
-    location.reload(); // Recarga la página para cerrar sesión
-}
-
-// Evento de Login
+// Evento Login
 document.getElementById('form-login').addEventListener('submit', (e) => {
     e.preventDefault();
     const user = document.getElementById('user').value;
     const pass = document.getElementById('pass').value;
 
-    // Simulación de validación (El usuario es 'admin', clave 'cruzazul2026')
     if(user === 'admin' && pass === 'cruzazul2026') {
+        esAdminLogueado = true; // Guardamos el estado de la sesión
         cerrarLogin();
-        document.getElementById('btn-admin').classList.add('hidden');
+        document.getElementById('btn-admin').textContent = "Mi Panel Admin";
         document.getElementById('btn-logout').classList.remove('hidden');
         mostrarSeccion('admin');
-        cargarProductos(); // Cargamos la tabla al entrar
     } else {
-        alert('Credenciales incorrectas');
+        alert('Acceso denegado: Credenciales incorrectas');
     }
 });
 
+function logout() {
+    esAdminLogueado = false;
+    location.reload();
+}
 
 // ==========================================
-// 2. LÓGICA DE CREACIÓN DE PRODUCTOS (POST)
+// 2. GESTIÓN DE PRODUCTOS (POST)
 // ==========================================
 
 function abrirModalAgregar() {
@@ -53,111 +67,88 @@ function abrirModalAgregar() {
 
 function cerrarModalAgregar() {
     document.getElementById('modal-agregar').classList.add('hidden');
-    document.getElementById('form-agregar').reset(); // Limpia los campos
+    document.getElementById('form-agregar').reset();
 }
 
-// Evento para enviar nuevo producto al Backend
 document.getElementById('form-agregar').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    // Capturar los datos del formulario
     const nombre = document.getElementById('nuevo-nombre').value;
     const precio = document.getElementById('nuevo-precio').value;
     const stock = document.getElementById('nuevo-stock').value;
 
     try {
-        // Enviar datos por POST al backend Node.js
         const response = await fetch('/api/productos', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre, precio, stock })
         });
 
         if (response.ok) {
             cerrarModalAgregar();
-            cargarProductos(); // Refrescar las vistas inmediatamente
-            alert('¡Producto guardado exitosamente en la base de datos!');
-        } else {
-            alert('Hubo un problema al guardar el producto.');
+            cargarProductos();
+            alert('Producto añadido con éxito.');
         }
     } catch (error) {
-        alert('Error de conexión con el servidor PostgreSQL.');
-        console.error(error);
+        alert('Error al conectar con el servidor.');
     }
 });
 
-
 // ==========================================
-// 3. LÓGICA DE VISUALIZACIÓN MULTI-VISTA (GET)
+// 3. CARGA DINÁMICA DE DATOS (GET)
 // ==========================================
 
 async function cargarProductos() {
     const listaAdmin = document.getElementById('lista-productos');
     const catalogoPublico = document.getElementById('catalogo-publico');
     
-    // Estados de carga
-    if (listaAdmin) listaAdmin.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">Cargando base de datos...</td></tr>';
-    if (catalogoPublico) catalogoPublico.innerHTML = '<p class="text-center col-span-full text-slate-500">Cargando catálogo desde la base de datos...</p>';
+    // Indicadores de carga
+    if (listaAdmin) listaAdmin.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Consultando base de datos...</td></tr>';
     
     try {
-        // Solicitar datos al backend
         const response = await fetch('/api/productos');
         const productos = await response.json();
         
-        // Limpiar contenedores
         if (listaAdmin) listaAdmin.innerHTML = '';
         if (catalogoPublico) catalogoPublico.innerHTML = '';
 
-        // Si no hay productos, mostrar mensaje
-        if (productos.length === 0) {
-            if (catalogoPublico) catalogoPublico.innerHTML = '<p class="text-center col-span-full text-slate-500 italic">No hay medicamentos registrados en el sistema aún.</p>';
-            if (listaAdmin) listaAdmin.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">Inventario vacío. Usa el botón verde para agregar productos.</td></tr>';
-            return;
-        }
-
-        // Inyectar la data iterando sobre el JSON
         productos.forEach(p => {
-            
-            // Renderizado: Vista de Administrador (Tabla)
+            // Render para Panel Admin (Tabla)
             if (listaAdmin) {
                 listaAdmin.innerHTML += `
                     <tr class="border-b hover:bg-slate-50 transition">
-                        <td class="p-4 font-medium">${p.nombre}</td>
-                        <td class="p-4 text-blue-600 font-bold">$${p.precio}</td>
-                        <td class="p-4"><span class="px-2 py-1 ${p.stock < 10 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'} rounded-md text-xs font-bold">${p.stock} uds</span></td>
-                        <td class="p-4 text-right"><button class="text-slate-400 hover:text-blue-600">Editar</button></td>
+                        <td class="p-4 font-medium text-slate-800">${p.nombre}</td>
+                        <td class="p-4 text-blue-700 font-bold">$${p.precio}</td>
+                        <td class="p-4">
+                            <span class="px-2 py-1 ${p.stock < 10 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'} rounded-md text-xs font-bold">
+                                ${p.stock} uds
+                            </span>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium">Editar</button>
+                        </td>
                     </tr>
                 `;
             }
 
-            // Renderizado: Vista Pública de Clientes (Tarjetas Grid)
+            // Render para Catálogo Público (Cards)
             if (catalogoPublico) {
                 catalogoPublico.innerHTML += `
-                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between hover:shadow-md transition">
-                        <div>
-                            <h3 class="font-bold text-lg text-slate-800 mb-1">${p.nombre}</h3>
-                            <p class="text-sm ${p.stock > 0 ? 'text-green-600' : 'text-red-500'} mb-4 font-medium">
-                                ${p.stock > 0 ? '✓ Disponible' : '✗ Sin stock'}
-                            </p>
-                        </div>
-                        <div class="flex justify-between items-center border-t border-slate-100 pt-4">
-                            <span class="text-2xl font-black text-blue-700">$${p.precio}</span>
-                            <button class="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-blue-100 transition">Comprar</button>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition-all transform hover:-translate-y-1">
+                        <div class="h-32 bg-slate-50 rounded-xl mb-4 flex items-center justify-center text-4xl">💊</div>
+                        <h3 class="font-bold text-slate-800 mb-1">${p.nombre}</h3>
+                        <p class="text-xs text-slate-500 mb-4">Disponible para entrega inmediata</p>
+                        <div class="flex justify-between items-center border-t pt-4">
+                            <span class="text-xl font-black text-blue-700">$${p.precio}</span>
+                            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition">Añadir</button>
                         </div>
                     </div>
                 `;
             }
         });
     } catch (error) {
-        if (listaAdmin) listaAdmin.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-red-500 font-bold">Error al conectar con la base de datos PostgreSQL.</td></tr>';
-        if (catalogoPublico) catalogoPublico.innerHTML = '<p class="text-red-500 text-center col-span-full font-bold">Servicio temporalmente no disponible.</p>';
-        console.error("Error obteniendo productos:", error);
+        console.error("Error al cargar productos:", error);
     }
 }
 
-// Ejecutar cargarProductos() apenas el cliente entra a la página web
-window.addEventListener('DOMContentLoaded', () => {
-    cargarProductos();
-});
+// Carga inicial
+window.addEventListener('DOMContentLoaded', cargarProductos);
