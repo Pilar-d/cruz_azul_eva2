@@ -1,12 +1,12 @@
 // Variable de estado para saber si el admin está logueado
 let esAdminLogueado = false;
+let idEdicionActual = null; // Guardará el ID del producto que estamos editando
 
 // ==========================================
 // 1. NAVEGACIÓN Y ACCESO
 // ==========================================
 
 function abrirLogin() {
-    // Si ya inició sesión, lo llevamos directo al panel en lugar de pedir clave
     if (esAdminLogueado) {
         mostrarSeccion('admin');
     } else {
@@ -27,22 +27,19 @@ function mostrarSeccion(seccion) {
         admin.classList.remove('hidden');
         cargarProductos();
     } else {
-        // Por defecto mostramos el inicio público
         inicio.classList.remove('hidden');
         admin.classList.add('hidden');
-        // Si no es admin logueado, nos aseguramos que cargue el catálogo público
         cargarProductos(); 
     }
 }
 
-// Evento Login
 document.getElementById('form-login').addEventListener('submit', (e) => {
     e.preventDefault();
     const user = document.getElementById('user').value;
     const pass = document.getElementById('pass').value;
 
     if(user === 'admin' && pass === 'cruzazul2026') {
-        esAdminLogueado = true; // Guardamos el estado de la sesión
+        esAdminLogueado = true;
         cerrarLogin();
         document.getElementById('btn-admin').textContent = "Mi Panel Admin";
         document.getElementById('btn-logout').classList.remove('hidden');
@@ -58,9 +55,10 @@ function logout() {
 }
 
 // ==========================================
-// 2. GESTIÓN DE PRODUCTOS (POST)
+// 2. GESTIÓN DE PRODUCTOS (CREAR, EDITAR, ELIMINAR)
 // ==========================================
 
+// --- CREAR ---
 function abrirModalAgregar() {
     document.getElementById('modal-agregar').classList.remove('hidden');
 }
@@ -82,7 +80,6 @@ document.getElementById('form-agregar').addEventListener('submit', async (e) => 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre, precio, stock })
         });
-
         if (response.ok) {
             cerrarModalAgregar();
             cargarProductos();
@@ -93,6 +90,67 @@ document.getElementById('form-agregar').addEventListener('submit', async (e) => 
     }
 });
 
+// --- EDITAR ---
+function abrirModalEditar(id, nombre, precio, stock) {
+    idEdicionActual = id;
+    document.getElementById('editar-nombre').value = nombre;
+    document.getElementById('editar-precio').value = precio;
+    document.getElementById('editar-stock').value = stock;
+    document.getElementById('modal-editar').classList.remove('hidden');
+}
+
+function cerrarModalEditar() {
+    document.getElementById('modal-editar').classList.add('hidden');
+    document.getElementById('form-editar').reset();
+    idEdicionActual = null;
+}
+
+document.getElementById('form-editar').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nombre = document.getElementById('editar-nombre').value;
+    const precio = document.getElementById('editar-precio').value;
+    const stock = document.getElementById('editar-stock').value;
+
+    try {
+        const response = await fetch(`/api/productos/${idEdicionActual}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, precio, stock })
+        });
+
+        if (response.ok) {
+            cerrarModalEditar();
+            cargarProductos();
+            alert('Producto actualizado con éxito.');
+        } else {
+            alert('Error al actualizar el producto.');
+        }
+    } catch (error) {
+        alert('Error al conectar con el servidor.');
+    }
+});
+
+// --- ELIMINAR ---
+async function eliminarProducto(id) {
+    // Pedimos confirmación antes de borrar
+    if (confirm('¿Estás seguro de que deseas eliminar este medicamento de la base de datos?')) {
+        try {
+            const response = await fetch(`/api/productos/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                cargarProductos();
+                alert('Producto eliminado correctamente.');
+            } else {
+                alert('Error al eliminar el producto.');
+            }
+        } catch (error) {
+            alert('Error de conexión con el servidor.');
+        }
+    }
+}
+
 // ==========================================
 // 3. CARGA DINÁMICA DE DATOS (GET)
 // ==========================================
@@ -101,7 +159,6 @@ async function cargarProductos() {
     const listaAdmin = document.getElementById('lista-productos');
     const catalogoPublico = document.getElementById('catalogo-publico');
     
-    // Indicadores de carga
     if (listaAdmin) listaAdmin.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Consultando base de datos...</td></tr>';
     
     try {
@@ -112,8 +169,8 @@ async function cargarProductos() {
         if (catalogoPublico) catalogoPublico.innerHTML = '';
 
         productos.forEach(p => {
-            // Render para Panel Admin (Tabla)
             if (listaAdmin) {
+                // Aquí añadimos los botones funcionales de Editar y Eliminar usando el "p.id"
                 listaAdmin.innerHTML += `
                     <tr class="border-b hover:bg-slate-50 transition">
                         <td class="p-4 font-medium text-slate-800">${p.nombre}</td>
@@ -124,13 +181,13 @@ async function cargarProductos() {
                             </span>
                         </td>
                         <td class="p-4 text-right">
-                            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium">Editar</button>
+                            <button onclick="abrirModalEditar(${p.id}, '${p.nombre}', ${p.precio}, ${p.stock})" class="text-blue-600 hover:text-blue-800 text-sm font-bold mr-3">Editar</button>
+                            <button onclick="eliminarProducto(${p.id})" class="text-red-500 hover:text-red-700 text-sm font-bold">Eliminar</button>
                         </td>
                     </tr>
                 `;
             }
 
-            // Render para Catálogo Público (Cards)
             if (catalogoPublico) {
                 catalogoPublico.innerHTML += `
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition-all transform hover:-translate-y-1">
@@ -150,5 +207,4 @@ async function cargarProductos() {
     }
 }
 
-// Carga inicial
 window.addEventListener('DOMContentLoaded', cargarProductos);
